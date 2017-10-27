@@ -1,9 +1,10 @@
-на примере справочника Финансовые инструменты.
+--на примере справочника Финансовые инструменты.
 
-создаем таблицу для логирования, структуру полей берем из исходной таблицы
+--создаем таблицу для логирования, структуру полей берем из исходной таблицы
 
 --это исходная таблица
 
+/*
 CREATE TABLE [dbo].[_Reference16362](
 	[_IDRRef] [binary](16) NOT NULL,
 	[_Version] [timestamp] NOT NULL,
@@ -26,12 +27,15 @@ CREATE TABLE [dbo].[_Reference16362](
 	[_Fld18229RRef] [binary](16) NULL,
 	[_Fld628] [numeric](7, 0) NOT NULL
 ) ON [PRIMARY]
+*/
 
 --это таблица лога
 
 CREATE TABLE [dbo].[_Reference16362_Log](
 	[_EventType] [nvarchar] (1) NOT NULL, 	--новое поле, принимает одно из трех значений: I (insert), U (update), D (delete)
 	[_LogMoment] [datetime] NOT NULL,		--новое поле, время события в EventType
+	[_RowVersion] [nvarchar](3) NOT NULL,	--новое поле, версия строки для события Update(старая/новая), принимает 2 значения: old / new
+											--для события INSERT всегда new, для события DELETE всегда old
 	[_IDRRef] [binary](16) NOT NULL,
 	--здесь было поле _Version, для лога оно не требуется, т.к. невозможно вставить в него значение из исходной таблицы.
 	[_Marked] [binary](1) NOT NULL,
@@ -69,6 +73,7 @@ select
 
 	'D',
 	@cur_date,
+	'old',
 	[_IDRRef],	
 	[_Marked],
 	[_IsMetadata],
@@ -104,12 +109,14 @@ CREATE TRIGGER [_Reference16362_Updated] ON [dbo].[_Reference16362]
 
 		DECLARE @cur_date datetime
         set @cur_date = GETDATE()
-        INSERT INTO 
+        
+		INSERT INTO 
 			[dbo].[_Reference16362_Log]
 select 
 
 	'U',
 	@cur_date,
+	'old',
 	[_IDRRef],	
 	[_Marked],
 	[_IsMetadata],
@@ -131,6 +138,35 @@ select
 	[_Fld628]
 FROM deleted
 
+UNION ALL
+
+
+select 
+
+	'U',
+	@cur_date,
+	'new',
+	[_IDRRef],	
+	[_Marked],
+	[_IsMetadata],
+	[_Code],
+	[_Description],
+	[_Fld16440],
+	[_Fld16441_TYPE],
+	[_Fld16441_RTRef],
+	[_Fld16441_RRRef],
+	[_Fld16442RRef],
+	[_Fld16443],
+	[_Fld16444],
+	[_Fld16929RRef],
+	[_Fld17550RRef],
+	[_Fld17628],
+	[_Fld18227],
+	[_Fld18228],
+	[_Fld18229RRef],
+	[_Fld628]
+FROM inserted
+
 GO
 
 --создаем триггер на добавление
@@ -148,6 +184,7 @@ select
 
 	'I',
 	@cur_date,
+	'new',
 	[_IDRRef],	
 	[_Marked],
 	[_IsMetadata],
