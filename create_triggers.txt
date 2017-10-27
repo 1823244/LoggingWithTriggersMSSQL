@@ -1,0 +1,172 @@
+на примере справочника Финансовые инструменты.
+
+создаем таблицу для логирования, структуру полей берем из исходной таблицы
+
+--это исходная таблица
+
+CREATE TABLE [dbo].[_Reference16362](
+	[_IDRRef] [binary](16) NOT NULL,
+	[_Version] [timestamp] NOT NULL,
+	[_Marked] [binary](1) NOT NULL,
+	[_IsMetadata] [binary](1) NOT NULL,
+	[_Code] [numeric](9, 0) NOT NULL,
+	[_Description] [nvarchar](150) NOT NULL,
+	[_Fld16440] [nvarchar](200) NULL,
+	[_Fld16441_TYPE] [binary](1) NULL,
+	[_Fld16441_RTRef] [binary](4) NULL,
+	[_Fld16441_RRRef] [binary](16) NULL,
+	[_Fld16442RRef] [binary](16) NULL,
+	[_Fld16443] [binary](1) NULL,
+	[_Fld16444] [nvarchar](300) NULL,
+	[_Fld16929RRef] [binary](16) NULL,
+	[_Fld17550RRef] [binary](16) NULL,
+	[_Fld17628] [numeric](20, 7) NULL,
+	[_Fld18227] [numeric](20, 0) NULL,
+	[_Fld18228] [datetime] NULL,
+	[_Fld18229RRef] [binary](16) NULL,
+	[_Fld628] [numeric](7, 0) NOT NULL
+) ON [PRIMARY]
+
+--это таблица лога
+
+CREATE TABLE [dbo].[_Reference16362_Log](
+	[_EventType] [nvarchar] (1) NOT NULL, 	--новое поле, принимает одно из трех значений: I (insert), U (update), D (delete)
+	[_LogMoment] [datetime] NOT NULL,		--новое поле, время события в EventType
+	[_IDRRef] [binary](16) NOT NULL,
+	--здесь было поле _Version, для лога оно не требуется, т.к. невозможно вставить в него значение из исходной таблицы.
+	[_Marked] [binary](1) NOT NULL,
+	[_IsMetadata] [binary](1) NOT NULL,
+	[_Code] [numeric](9, 0) NOT NULL,
+	[_Description] [nvarchar](150) NOT NULL,
+	[_Fld16440] [nvarchar](200) NULL,
+	[_Fld16441_TYPE] [binary](1) NULL,
+	[_Fld16441_RTRef] [binary](4) NULL,
+	[_Fld16441_RRRef] [binary](16) NULL,
+	[_Fld16442RRef] [binary](16) NULL,
+	[_Fld16443] [binary](1) NULL,
+	[_Fld16444] [nvarchar](300) NULL,
+	[_Fld16929RRef] [binary](16) NULL,
+	[_Fld17550RRef] [binary](16) NULL,
+	[_Fld17628] [numeric](20, 7) NULL,
+	[_Fld18227] [numeric](20, 0) NULL,
+	[_Fld18228] [datetime] NULL,
+	[_Fld18229RRef] [binary](16) NULL,
+	[_Fld628] [numeric](7, 0) NOT NULL
+) ON [PRIMARY]
+
+--создаем триггер на удаление.
+
+CREATE TRIGGER [_Reference16362_Deleted] ON [dbo].[_Reference16362]
+        FOR DELETE
+        AS
+        SET NOCOUNT ON
+
+		DECLARE @cur_date datetime
+        set @cur_date = GETDATE()
+        INSERT INTO 
+			[dbo].[_Reference16362_Log]
+select 
+
+	'D',
+	@cur_date,
+	[_IDRRef],	
+	[_Marked],
+	[_IsMetadata],
+	[_Code],
+	[_Description],
+	[_Fld16440],
+	[_Fld16441_TYPE],
+	[_Fld16441_RTRef],
+	[_Fld16441_RRRef],
+	[_Fld16442RRef],
+	[_Fld16443],
+	[_Fld16444],
+	[_Fld16929RRef],
+	[_Fld17550RRef],
+	[_Fld17628],
+	[_Fld18227],
+	[_Fld18228],
+	[_Fld18229RRef],
+	[_Fld628]
+FROM deleted
+
+GO
+
+--создаем триггер на обновление. сохраняет состояние до обновления.
+--TODO доделать запись обоих состояния. старое из deleted, новое inserted
+--	возможно, только для изимененных реквизитов
+
+
+CREATE TRIGGER [_Reference16362_Updated] ON [dbo].[_Reference16362]
+        FOR UPDATE
+        AS
+        SET NOCOUNT ON
+
+		DECLARE @cur_date datetime
+        set @cur_date = GETDATE()
+        INSERT INTO 
+			[dbo].[_Reference16362_Log]
+select 
+
+	'U',
+	@cur_date,
+	[_IDRRef],	
+	[_Marked],
+	[_IsMetadata],
+	[_Code],
+	[_Description],
+	[_Fld16440],
+	[_Fld16441_TYPE],
+	[_Fld16441_RTRef],
+	[_Fld16441_RRRef],
+	[_Fld16442RRef],
+	[_Fld16443],
+	[_Fld16444],
+	[_Fld16929RRef],
+	[_Fld17550RRef],
+	[_Fld17628],
+	[_Fld18227],
+	[_Fld18228],
+	[_Fld18229RRef],
+	[_Fld628]
+FROM deleted
+
+GO
+
+--создаем триггер на добавление
+
+CREATE TRIGGER [_Reference16362_Inserted] ON [dbo].[_Reference16362]
+        FOR INSERT
+        AS
+        SET NOCOUNT ON
+
+		DECLARE @cur_date datetime
+        set @cur_date = GETDATE()
+        INSERT INTO 
+			[dbo].[_Reference16362_Log]
+select 
+
+	'I',
+	@cur_date,
+	[_IDRRef],	
+	[_Marked],
+	[_IsMetadata],
+	[_Code],
+	[_Description],
+	[_Fld16440],
+	[_Fld16441_TYPE],
+	[_Fld16441_RTRef],
+	[_Fld16441_RRRef],
+	[_Fld16442RRef],
+	[_Fld16443],
+	[_Fld16444],
+	[_Fld16929RRef],
+	[_Fld17550RRef],
+	[_Fld17628],
+	[_Fld18227],
+	[_Fld18228],
+	[_Fld18229RRef],
+	[_Fld628]
+FROM inserted
+
+GO
